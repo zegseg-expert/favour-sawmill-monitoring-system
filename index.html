@@ -43,7 +43,7 @@
         </div>
 
         <div class="card">
-            <h2>📈 History Graph</h2>
+            <h2>📈 History Graph (Last 10)</h2>
             <div id="chart-container">
                 <canvas id="chart"></canvas>
             </div>
@@ -79,7 +79,7 @@
             options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } } } }
         });
 
-        // --- FETCH DATA ---
+        // --- FETCH DATA (LIMIT TO 10) ---
         async function fetchData() {
             try {
                 const qLatest = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(1));
@@ -101,7 +101,8 @@
                     }
                 }
 
-                const qHistory = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(20));
+                // **** CHANGED LIMIT TO 10 HERE ****
+                const qHistory = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(10));
                 const historySnapshot = await getDocs(qHistory);
                 let history = [];
                 historySnapshot.forEach(doc => history.push(doc.data()));
