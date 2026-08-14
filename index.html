@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favour Sawmill Monitoring System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #0f172a; color: white; margin: 0; padding: 20px; }
+        .header { background: #1e293b; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px; border-bottom: 4px solid #3b82f6; }
+        .header h1 { margin: 0; color: #3b82f6; }
+        .header p { color: #94a3b8; margin: 5px 0 0 0; }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
+        .card { background: #1e293b; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .card h2 { color: #3b82f6; margin-top: 0; font-size: 18px; }
+        .value { font-size: 40px; font-weight: bold; margin: 10px 0; }
+        .danger { color: #ef4444; }
+        .safe { color: #22c55e; }
+        .status-box { padding: 15px; border-radius: 8px; text-align: center; font-size: 18px; margin-top: 15px; font-weight: bold; }
+        .status-danger { background: #ef4444; color: white; }
+        .status-safe { background: #22c55e; color: white; }
+        #chart-container { width: 100%; height: 250px; margin-top: 10px; }
+        .footer { text-align: center; color: #64748b; margin-top: 20px; font-size: 14px; }
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🌲 Favour Sawmill Monitoring System</h1>
+        <p>Real-time Air Quality & Dust Monitoring</p>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>📊 Live Data</h2>
+            <div class="value">PM2.5: <span id="pm25">--</span> µg/m³</div>
+            <div class="value">Fans: <span id="fans">--</span></div>
+            <div id="statusBox" class="status-box status-safe">✅ Air Quality Normal</div>
+            <div style="margin-top: 10px; font-size: 14px; color: #94a3b8;">
+                Last update: <span id="lastUpdate">--</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📈 History Graph</h2>
+            <div id="chart-container">
+                <canvas id="chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Powered by Firebase & GitHub Pages
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        // --- YOUR FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyTzs_TItKOtDo65NQWEhVIQHWpQEUtNc",
+            authDomain: "favour-sawmill-monitorin-62eaf.firebaseapp.com",
+            projectId: "favour-sawmill-monitorin-62eaf",
+            storageBucket: "favour-sawmill-monitorin-62eaf.firebasestorage.app",
+            messagingSenderId: "804940279117",
+            appId: "1:804940279117:web:12e2000376d3a0e1f49b04"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- CHART SETUP ---
+        const ctx = document.getElementById('chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'PM2.5 (µg/m³)', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.3, fill: true, borderWidth: 2 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } } } }
+        });
+
+        // --- FETCH DATA ---
+        async function fetchData() {
+            try {
+                const qLatest = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(1));
+                const latestSnapshot = await getDocs(qLatest);
+
+                if (!latestSnapshot.empty) {
+                    const latest = latestSnapshot.docs[0].data();
+                    document.getElementById('pm25').textContent = latest.pm25 || 0;
+                    document.getElementById('fans').textContent = latest.fan_active ? 'ON 🔵' : 'OFF';
+                    document.getElementById('lastUpdate').textContent = latest.timestamp ? new Date(latest.timestamp.seconds * 1000).toLocaleTimeString() : '--';
+
+                    const statusBox = document.getElementById('statusBox');
+                    if (latest.alert) {
+                        statusBox.className = 'status-box status-danger';
+                        statusBox.textContent = '🚨 ALERT! High Dust Level!';
+                    } else {
+                        statusBox.className = 'status-box status-safe';
+                        statusBox.textContent = '✅ Air Quality Normal';
+                    }
+                }
+
+                const qHistory = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(20));
+                const historySnapshot = await getDocs(qHistory);
+                let history = [];
+                historySnapshot.forEach(doc => history.push(doc.data()));
+                history.reverse();
+
+                if (history.length > 0) {
+                    chart.data.labels = history.map(d => d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleTimeString() : '--');
+                    chart.data.datasets[0].data = history.map(d => d.pm25 || 0);
+                    chart.update();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('pm25').textContent = 'Error';
+            }
+        }
+
+        setInterval(fetchData, 10000);
+        fetchData();
+    </script>
+</body>
+</html>
