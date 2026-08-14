@@ -1,26 +1,34 @@
 # 🌲 Favour Sawmill Monitoring System
 
-A real-time air quality monitoring system for sawmill dust detection using IoT.
+A real-time air quality monitoring system built for **Favour Sawmill** using IoT.
 
-## Features
-- Real-time PM2.5 dust monitoring
-- Automatic fan control
-- LoRa 433MHz wireless communication
-- Buzzer alert system
-- Live dashboard on GitHub Pages
-- Firebase Firestore database
+## 🚀 System Features
+- **Sharp GP2Y1014 Dust Sensor** (PM2.5 detection)
+- **Automatic Fan Control** (Turns on at 100 µg/m³)
+- **LoRa 433MHz Wireless Communication** (Long-range transmission)
+- **ESP32 Receiver** with:
+  - 🔊 Buzzer Alarm
+  - 🔴 Blinking Red LED Alert
+  - 📶 WiFi Connectivity
+- **Firebase Firestore Database** (Cloud storage)
+- **Live Web Dashboard** on GitHub Pages (Shows last 10 readings)
 
-## Hardware
-- Transmitter: Arduino Nano + Sharp GP2Y1014 + LoRa + 2x DC Fans
-- Receiver: ESP32 + LoRa + Buzzer
+## 🔧 Hardware
+- **Transmitter:** Arduino Nano + Dust Sensor + LoRa + 2x DC Fans
+- **Receiver:** ESP32 + LoRa + Buzzer + Red LED
 
-## Live Dashboard
-Visit: `https://YOUR_USERNAME.github.io/favour-sawmill-monitoring-system`
+## 🌐 Live Dashboard
+[https://zegseg-expert.github.io/favour-sawmill-monitoring-system/](https://zegseg-expert.github.io/favour-sawmill-monitoring-system/)
 
-## How it works
-1. Transmitter senses dust and sends data via LoRa
-2. ESP32 receiver gets data and forwards to Firebase
-3. Dashboard fetches data from Firebase and displays it live
+## 📡 How it Works
+1. Transmitter reads dust levels & controls fans.
+2. Transmitter sends data via **LoRa 433MHz**.
+3. ESP32 Receiver gets data, sounds buzzer, blinks LED.
+4. ESP32 sends data to **Firebase via HTTP REST**.
+5. GitHub Pages dashboard fetches data & displays it live.
 
-## License
-MIT
+## 🛠️ Built With
+- Arduino IDE
+- Firebase Firestore
+- GitHub Pages
+- Chart.js
