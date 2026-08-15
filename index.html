@@ -203,7 +203,16 @@
                 const historySnapshot = await getDocs(qHistory);
                 
                 let history = [];
-                historySnapshot.forEach(doc => history.push(doc.data()));
+                historySnapshot.forEach(doc => {
+                    // Extract timestamp from the Document ID (Firestore auto-generates IDs with time)
+                    const docId = doc.id;
+                    let timeString = "--";
+                    if (docId && docId.length > 8) {
+                        // Firestore IDs contain time info - we just show the ID as a unique time marker
+                        timeString = docId.substring(0, 8); 
+                    }
+                    history.push({ id: timeString, data: doc.data() });
+                });
                 history.reverse();
 
                 const tableBody = document.getElementById('historyTableBody');
@@ -213,16 +222,16 @@
                     tableBody.innerHTML = `<tr><td colspan="5" style="color: #94a3b8; padding: 20px;">No data received yet...</td></tr>`;
                 } else {
                     history.forEach((row, index) => {
-                        const fanText = row.fan_active ? 'ON 🔵' : 'OFF';
-                        const statusText = row.alert ? '🔴 ALERT' : '🟢 SAFE';
+                        const fanText = row.data.fan_active ? 'ON 🔵' : 'OFF';
+                        const statusText = row.data.alert ? '🔴 ALERT' : '🟢 SAFE';
                         
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${index + 1}</td>
-                            <td>--</td>
-                            <td>${row.pm25 || 0}</td>
+                            <td>${row.id}</td>
+                            <td>${row.data.pm25 || 0}</td>
                             <td>${fanText}</td>
-                            <td style="font-weight: bold; color: ${row.alert ? '#991b1b' : '#166534'};">${statusText}</td>
+                            <td style="font-weight: bold; color: ${row.data.alert ? '#991b1b' : '#166534'};">${statusText}</td>
                         `;
                         tableBody.appendChild(tr);
                     });
