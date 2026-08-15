@@ -38,6 +38,8 @@
             margin-bottom: 25px;
             font-size: 14px;
         }
+        
+        /* Live Data Cards */
         .live-cards {
             display: flex;
             gap: 15px;
@@ -53,8 +55,18 @@
             text-align: center;
             border: 1px solid #e2e8f0;
         }
-        .card .label { font-size: 13px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-        .card .value { font-size: 26px; font-weight: bold; color: #1e3c72; margin-top: 5px; }
+        .card .label {
+            font-size: 13px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .card .value {
+            font-size: 26px;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-top: 5px;
+        }
         .card .value span { font-size: 16px; font-weight: normal; color: #64748b; }
         
         .status-badge {
@@ -78,6 +90,16 @@
             background: #f1f5f9;
             padding: 10px;
             border-radius: 10px;
+        }
+
+        /* Table Styling */
+        h2 {
+            color: #1e3c72;
+            font-size: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .table-container {
             overflow-x: auto;
@@ -104,6 +126,9 @@
             font-size: 14px;
             color: #334155;
         }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #f8fafc; }
+        
         .footer {
             text-align: center;
             color: #94a3b8;
@@ -112,14 +137,21 @@
             border-top: 1px solid #e2e8f0;
             padding-top: 20px;
         }
-        @media (max-width: 600px) { .container { padding: 15px; } }
+
+        @media (max-width: 600px) {
+            .container { padding: 15px; }
+            .card .value { font-size: 20px; }
+            th, td { padding: 8px; font-size: 12px; }
+        }
     </style>
 </head>
 <body>
+
     <div class="container">
         <h1>🌲 Favour Sawmill Monitoring System</h1>
         <div class="subtitle">Real-time Air Quality & Dust Monitoring</div>
 
+        <!-- Live Data Cards -->
         <div class="live-cards">
             <div class="card">
                 <div class="label">💨 PM2.5</div>
@@ -135,11 +167,13 @@
             </div>
         </div>
 
+        <!-- Info Bar -->
         <div class="info-bar">
             📡 Last Update: <span id="lastUpdate">--</span> &nbsp;|&nbsp; 
             📦 Total Readings: <span id="totalReadings">0</span>
         </div>
 
+        <!-- History Table -->
         <h2>📋 Last 10 Readings</h2>
         <div class="table-container">
             <table>
@@ -153,17 +187,24 @@
                     </tr>
                 </thead>
                 <tbody id="historyTableBody">
-                    <tr><td colspan="5" style="color: #94a3b8; padding: 20px;">Loading data...</td></tr>
+                    <tr>
+                        <td colspan="5" style="color: #94a3b8; padding: 20px;">Waiting for data...</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
-        <div class="footer">Powered by Firebase & GitHub Pages</div>
+
+        <div class="footer">
+            Powered by Firebase & GitHub Pages
+        </div>
     </div>
 
+    <!-- Firebase & Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
+        // --- YOUR FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCyTzs_TItKOtDo65NQWEhVIQHWpQEUtNc",
             authDomain: "favour-sawmill-monitorin-62eaf.firebaseapp.com",
@@ -176,17 +217,20 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // --- UPDATE DASHBOARD ---
         async function fetchData() {
             try {
-                // 1. Fetch latest reading
-                const qLatest = query(collection(db, "sawmill_readings"), orderBy("__name__", "desc"), limit(1));
+                // 1. Get Latest Reading
+                const qLatest = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(1));
                 const latestSnapshot = await getDocs(qLatest);
 
                 if (!latestSnapshot.empty) {
                     const latest = latestSnapshot.docs[0].data();
+                    
                     document.getElementById('pm25').innerHTML = (latest.pm25 || 0) + ' <span>µg/m³</span>';
                     document.getElementById('fans').textContent = latest.fan_active ? 'ON 🔵' : 'OFF';
-                    document.getElementById('lastUpdate').textContent = 'Just now';
+                    document.getElementById('lastUpdate').textContent = latest.timestamp ? 
+                        new Date(latest.timestamp.seconds * 1000).toLocaleTimeString() : '--';
 
                     const statusBox = document.getElementById('statusBox');
                     if (latest.alert) {
@@ -198,52 +242,47 @@
                     }
                 }
 
-                // 2. Fetch last 10 readings
-                const qHistory = query(collection(db, "sawmill_readings"), orderBy("__name__", "desc"), limit(10));
+                // 2. Get Last 10 Readings for Table
+                const qHistory = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(10));
                 const historySnapshot = await getDocs(qHistory);
                 
                 let history = [];
-                historySnapshot.forEach(doc => {
-                    // Extract timestamp from the Document ID (Firestore auto-generates IDs with time)
-                    const docId = doc.id;
-                    let timeString = "--";
-                    if (docId && docId.length > 8) {
-                        // Firestore IDs contain time info - we just show the ID as a unique time marker
-                        timeString = docId.substring(0, 8); 
-                    }
-                    history.push({ id: timeString, data: doc.data() });
-                });
-                history.reverse();
+                historySnapshot.forEach(doc => history.push(doc.data()));
+                history.reverse(); // Show oldest to newest
 
                 const tableBody = document.getElementById('historyTableBody');
                 tableBody.innerHTML = '';
 
                 if (history.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="5" style="color: #94a3b8; padding: 20px;">No data received yet...</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="5" style="color: #94a3b8; padding: 20px;">No data yet...</td></tr>`;
                 } else {
                     history.forEach((row, index) => {
-                        const fanText = row.data.fan_active ? 'ON 🔵' : 'OFF';
-                        const statusText = row.data.alert ? '🔴 ALERT' : '🟢 SAFE';
+                        const timeStr = row.timestamp ? 
+                            new Date(row.timestamp.seconds * 1000).toLocaleTimeString() : '--';
+                        const fanText = row.fan_active ? 'ON 🔵' : 'OFF';
+                        const statusText = row.alert ? '🔴 ALERT' : '🟢 SAFE';
                         
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${index + 1}</td>
-                            <td>${row.id}</td>
-                            <td>${row.data.pm25 || 0}</td>
+                            <td>${timeStr}</td>
+                            <td>${row.pm25 || 0}</td>
                             <td>${fanText}</td>
-                            <td style="font-weight: bold; color: ${row.data.alert ? '#991b1b' : '#166534'};">${statusText}</td>
+                            <td style="font-weight: bold; color: ${row.alert ? '#991b1b' : '#166534'};">${statusText}</td>
                         `;
                         tableBody.appendChild(tr);
                     });
+                    
                     document.getElementById('totalReadings').textContent = history.length;
                 }
 
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('pm25').textContent = 'Error';
+                document.getElementById('pm25').innerHTML = 'Error';
             }
         }
 
+        // Refresh every 3 seconds (to catch rapid LoRa data)
         setInterval(fetchData, 3000);
         fetchData();
     </script>
