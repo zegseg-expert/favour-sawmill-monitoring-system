@@ -4,207 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Favour Sawmill Monitoring System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f8ff;
-            margin: 0;
-            padding: 30px;
-            display: flex;
-            justify-content: center;
-        }
-        .container {
-            max-width: 950px;
-            width: 100%;
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        h1 {
-            text-align: center;
-            color: #1e3c72;
-            font-size: 28px;
-            margin-top: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 25px;
-            font-size: 14px;
-        }
-        
-        /* Live Data Cards */
-        .live-cards {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 25px;
-        }
-        .card {
-            flex: 1;
-            min-width: 140px;
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 15px 20px;
-            text-align: center;
-            border: 1px solid #e2e8f0;
-        }
-        .card .label {
-            font-size: 13px;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .card .value {
-            font-size: 26px;
-            font-weight: bold;
-            color: #1e3c72;
-            margin-top: 5px;
-        }
-        .card .value span { font-size: 16px; font-weight: normal; color: #64748b; }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 8px 20px;
-            border-radius: 30px;
-            font-weight: bold;
-            font-size: 14px;
-            margin-top: 10px;
-            text-align: center;
-            width: 100%;
-        }
-        .status-safe { background: #dcfce7; color: #166534; }
-        .status-danger { background: #fee2e2; color: #991b1b; }
-
-        .info-bar {
-            text-align: center;
-            font-size: 14px;
-            color: #64748b;
-            margin-bottom: 25px;
-            background: #f1f5f9;
-            padding: 10px;
-            border-radius: 10px;
-        }
-
-        /* Table Styling */
-        h2 {
-            color: #1e3c72;
-            font-size: 20px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .table-container {
-            overflow-x: auto;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-        }
-        th {
-            background: #1e3c72;
-            color: white;
-            padding: 14px 12px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        td {
-            padding: 12px;
-            text-align: center;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 14px;
-            color: #334155;
-        }
-        tr:last-child td { border-bottom: none; }
-        tr:hover { background: #f8fafc; }
-        
-        .footer {
-            text-align: center;
-            color: #94a3b8;
-            margin-top: 25px;
-            font-size: 13px;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 20px;
-        }
-
-        @media (max-width: 600px) {
-            .container { padding: 15px; }
-            .card .value { font-size: 20px; }
-            th, td { padding: 8px; font-size: 12px; }
-        }
+        body { font-family: Arial, sans-serif; background: #0f172a; color: white; margin: 0; padding: 20px; }
+        .header { background: #1e293b; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px; border-bottom: 4px solid #3b82f6; }
+        .header h1 { margin: 0; color: #3b82f6; }
+        .header p { color: #94a3b8; margin: 5px 0 0 0; }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
+        .card { background: #1e293b; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .card h2 { color: #3b82f6; margin-top: 0; font-size: 18px; }
+        .value { font-size: 40px; font-weight: bold; margin: 10px 0; }
+        .danger { color: #ef4444; }
+        .safe { color: #22c55e; }
+        .status-box { padding: 15px; border-radius: 8px; text-align: center; font-size: 18px; margin-top: 15px; font-weight: bold; }
+        .status-danger { background: #ef4444; color: white; }
+        .status-safe { background: #22c55e; color: white; }
+        #chart-container { width: 100%; height: 250px; margin-top: 10px; }
+        .footer { text-align: center; color: #64748b; margin-top: 20px; font-size: 14px; }
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="header">
         <h1>🌲 Favour Sawmill Monitoring System</h1>
-        <div class="subtitle">Real-time Air Quality & Dust Monitoring</div>
+        <p>Real-time Air Quality & Dust Monitoring</p>
+    </div>
 
-        <!-- Live Data Cards -->
-        <div class="live-cards">
-            <div class="card">
-                <div class="label">💨 PM2.5</div>
-                <div class="value" id="pm25">-- <span>µg/m³</span></div>
-            </div>
-            <div class="card">
-                <div class="label">🌀 Fans</div>
-                <div class="value" id="fans">--</div>
-            </div>
-            <div class="card" style="flex: 1.5;">
-                <div class="label">🚨 Status</div>
-                <div id="statusBox" class="status-badge status-safe">✅ Air Quality Normal</div>
+    <div class="container">
+        <div class="card">
+            <h2>📊 Live Data</h2>
+            <div class="value">PM2.5: <span id="pm25">--</span> µg/m³</div>
+            <div class="value">Fans: <span id="fans">--</span></div>
+            <div id="statusBox" class="status-box status-safe">✅ Air Quality Normal</div>
+            <div style="margin-top: 10px; font-size: 14px; color: #94a3b8;">
+                Last update: <span id="lastUpdate">--</span>
             </div>
         </div>
 
-        <!-- Info Bar -->
-        <div class="info-bar">
-            📡 Last Update: <span id="lastUpdate">--</span> &nbsp;|&nbsp; 
-            📦 Total Readings: <span id="totalReadings">0</span>
-        </div>
-
-        <!-- History Table -->
-        <h2>📋 Last 10 Readings</h2>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>⏱️ TIME</th>
-                        <th>💨 PM2.5 (µg/m³)</th>
-                        <th>🌀 FANS</th>
-                        <th>🚨 STATUS</th>
-                    </tr>
-                </thead>
-                <tbody id="historyTableBody">
-                    <tr>
-                        <td colspan="5" style="color: #94a3b8; padding: 20px;">Waiting for data...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="footer">
-            Powered by Firebase & GitHub Pages
+        <div class="card">
+            <h2>📈 History Graph</h2>
+            <div id="chart-container">
+                <canvas id="chart"></canvas>
+            </div>
         </div>
     </div>
 
-    <!-- Firebase & Logic -->
+    <div class="footer">
+        Powered by Firebase & GitHub Pages
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-        // --- YOUR FIREBASE CONFIG ---
+        // --- YOUR FIREBASE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyCyTzs_TItKOtDo65NQWEhVIQHWpQEUtNc",
             authDomain: "favour-sawmill-monitorin-62eaf.firebaseapp.com",
@@ -217,73 +71,54 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- UPDATE DASHBOARD ---
+        // --- CHART SETUP ---
+        const ctx = document.getElementById('chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'PM2.5 (µg/m³)', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.3, fill: true, borderWidth: 2 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } } } }
+        });
+
+        // --- FETCH DATA ---
         async function fetchData() {
             try {
-                // 1. Get Latest Reading
                 const qLatest = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(1));
                 const latestSnapshot = await getDocs(qLatest);
 
                 if (!latestSnapshot.empty) {
                     const latest = latestSnapshot.docs[0].data();
-                    
-                    document.getElementById('pm25').innerHTML = (latest.pm25 || 0) + ' <span>µg/m³</span>';
+                    document.getElementById('pm25').textContent = latest.pm25 || 0;
                     document.getElementById('fans').textContent = latest.fan_active ? 'ON 🔵' : 'OFF';
-                    document.getElementById('lastUpdate').textContent = latest.timestamp ? 
-                        new Date(latest.timestamp.seconds * 1000).toLocaleTimeString() : '--';
+                    document.getElementById('lastUpdate').textContent = latest.timestamp ? new Date(latest.timestamp.seconds * 1000).toLocaleTimeString() : '--';
 
                     const statusBox = document.getElementById('statusBox');
                     if (latest.alert) {
-                        statusBox.className = 'status-badge status-danger';
+                        statusBox.className = 'status-box status-danger';
                         statusBox.textContent = '🚨 ALERT! High Dust Level!';
                     } else {
-                        statusBox.className = 'status-badge status-safe';
+                        statusBox.className = 'status-box status-safe';
                         statusBox.textContent = '✅ Air Quality Normal';
                     }
                 }
 
-                // 2. Get Last 10 Readings for Table
-                const qHistory = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(10));
+                const qHistory = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(20));
                 const historySnapshot = await getDocs(qHistory);
-                
                 let history = [];
                 historySnapshot.forEach(doc => history.push(doc.data()));
-                history.reverse(); // Show oldest to newest
+                history.reverse();
 
-                const tableBody = document.getElementById('historyTableBody');
-                tableBody.innerHTML = '';
-
-                if (history.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="5" style="color: #94a3b8; padding: 20px;">No data yet...</td></tr>`;
-                } else {
-                    history.forEach((row, index) => {
-                        const timeStr = row.timestamp ? 
-                            new Date(row.timestamp.seconds * 1000).toLocaleTimeString() : '--';
-                        const fanText = row.fan_active ? 'ON 🔵' : 'OFF';
-                        const statusText = row.alert ? '🔴 ALERT' : '🟢 SAFE';
-                        
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${index + 1}</td>
-                            <td>${timeStr}</td>
-                            <td>${row.pm25 || 0}</td>
-                            <td>${fanText}</td>
-                            <td style="font-weight: bold; color: ${row.alert ? '#991b1b' : '#166534'};">${statusText}</td>
-                        `;
-                        tableBody.appendChild(tr);
-                    });
-                    
-                    document.getElementById('totalReadings').textContent = history.length;
+                if (history.length > 0) {
+                    chart.data.labels = history.map(d => d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleTimeString() : '--');
+                    chart.data.datasets[0].data = history.map(d => d.pm25 || 0);
+                    chart.update();
                 }
-
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('pm25').innerHTML = 'Error';
+                document.getElementById('pm25').textContent = 'Error';
             }
         }
 
-        // Refresh every 3 seconds (to catch rapid LoRa data)
-        setInterval(fetchData, 3000);
+        setInterval(fetchData, 10000);
         fetchData();
     </script>
 </body>
