@@ -22,7 +22,6 @@
         #chart-container { width: 100%; height: 250px; margin-top: 10px; }
         .footer { text-align: center; color: #64748b; margin-top: 20px; font-size: 14px; }
         
-        /* --- TABLE STYLES --- */
         .table-container { margin-top: 20px; overflow-x: auto; border-radius: 10px; border: 1px solid #334155; background: #1e293b; padding: 15px; }
         table { width: 100%; border-collapse: collapse; }
         th { background: #0f172a; color: #94a3b8; padding: 12px; text-align: center; font-size: 14px; border-bottom: 2px solid #334155; }
@@ -60,7 +59,6 @@
         </div>
     </div>
 
-    <!-- HISTORY TABLE -->
     <div class="container" style="margin-top: 20px; max-width: 1200px;">
         <div class="card" style="width: 100%;">
             <h2>📋 Last 10 Readings</h2>
@@ -103,7 +101,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- CHART SETUP ---
         const ctx = document.getElementById('chart').getContext('2d');
         const chart = new Chart(ctx, {
             type: 'line',
@@ -111,18 +108,17 @@
             options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } } } }
         });
 
-        // --- FETCH DATA (UPDATED TO USE __name__) ---
         async function fetchData() {
             try {
-                // 1. Fetch latest reading (Order by __name__ = Document ID = newest first)
-                const qLatest = query(collection(db, "sawmill_readings"), orderBy("__name__", "desc"), limit(1));
+                // Use the timestamp field from ESP32
+                const qLatest = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(1));
                 const latestSnapshot = await getDocs(qLatest);
 
                 if (!latestSnapshot.empty) {
                     const latest = latestSnapshot.docs[0].data();
                     document.getElementById('pm25').textContent = latest.pm25 || 0;
                     document.getElementById('fans').textContent = latest.fan_active ? 'ON 🔵' : 'OFF';
-                    document.getElementById('lastUpdate').textContent = "Just now";
+                    document.getElementById('lastUpdate').textContent = latest.timestamp ? new Date(latest.timestamp.seconds * 1000).toLocaleTimeString() : '--';
 
                     const statusBox = document.getElementById('statusBox');
                     if (latest.alert) {
@@ -134,29 +130,24 @@
                     }
                 }
 
-                // 2. Fetch last 20 readings for graph (Order by __name__)
-                const qHistory = query(collection(db, "sawmill_readings"), orderBy("__name__", "desc"), limit(20));
+                // Fetch last 20 for graph
+                const qHistory = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(20));
                 const historySnapshot = await getDocs(qHistory);
                 let history = [];
                 historySnapshot.forEach(doc => history.push(doc.data()));
                 history.reverse();
 
                 if (history.length > 0) {
-                    chart.data.labels = history.map(d => '--');
+                    chart.data.labels = history.map(d => d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleTimeString() : '--');
                     chart.data.datasets[0].data = history.map(d => d.pm25 || 0);
                     chart.update();
                 }
 
-                // 3. Fetch LAST 10 for the Table (Order by __name__)
-                const qTable = query(collection(db, "sawmill_readings"), orderBy("__name__", "desc"), limit(10));
+                // Fetch last 10 for table
+                const qTable = query(collection(db, "sawmill_readings"), orderBy("timestamp", "desc"), limit(10));
                 const tableSnapshot = await getDocs(qTable);
                 let tableData = [];
-                tableSnapshot.forEach(doc => {
-                    tableData.push({
-                        id: doc.id,
-                        data: doc.data()
-                    });
-                });
+                tableSnapshot.forEach(doc => tableData.push(doc.data()));
                 tableData.reverse();
 
                 const tableBody = document.getElementById('historyTableBody');
@@ -166,16 +157,16 @@
                     tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">No data received yet...</td></tr>`;
                 } else {
                     tableData.forEach((row, index) => {
-                        const timeStr = row.id.substring(0, 8);
-                        const fanText = row.data.fan_active ? 'ON 🔵' : 'OFF';
-                        const statusText = row.data.alert ? '🔴 ALERT' : '🟢 SAFE';
-                        const statusClass = row.data.alert ? 'table-status-danger' : 'table-status-safe';
+                        const timeStr = row.timestamp ? new Date(row.timestamp.seconds * 1000).toLocaleTimeString() : '--';
+                        const fanText = row.fan_active ? 'ON 🔵' : 'OFF';
+                        const statusText = row.alert ? '🔴 ALERT' : '🟢 SAFE';
+                        const statusClass = row.alert ? 'table-status-danger' : 'table-status-safe';
                         
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${index + 1}</td>
                             <td>${timeStr}</td>
-                            <td>${row.data.pm25 || 0}</td>
+                            <td>${row.pm25 || 0}</td>
                             <td>${fanText}</td>
                             <td class="${statusClass}">${statusText}</td>
                         `;
@@ -189,7 +180,7 @@
             }
         }
 
-        setInterval(fetchData, 3000);
+        setInterval(fetchData, 5000);
         fetchData();
     </script>
 </body>
